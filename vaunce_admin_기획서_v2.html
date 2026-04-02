@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VAUNCE APP ADMIN — 조회 결과 합계 행 기획서</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; font-size: 13px; background: #f0f0f0; color: #222; }
+
+  .cover { background: #1a3a2a; color: #fff; padding: 60px 80px; }
+  .cover .badge { font-size: 11px; letter-spacing: .12em; color: #7abf9a; margin-bottom: 12px; }
+  .cover h1 { font-size: 28px; font-weight: 700; line-height: 1.3; margin-bottom: 8px; }
+  .cover .sub { font-size: 14px; color: #a8d4b8; margin-bottom: 24px; }
+  .cover .meta { font-size: 12px; color: #6a9e80; border-top: 1px solid #2e5c3e; padding-top: 16px; display: flex; gap: 32px; }
+
+  .toc { background: #fff; padding: 28px 80px; border-bottom: 1px solid #e0e0e0; }
+  .toc h2 { font-size: 11px; font-weight: 700; color: #888; letter-spacing: .08em; margin-bottom: 12px; }
+  .toc-list { display: flex; flex-wrap: wrap; gap: 6px 28px; }
+  .toc-list a { font-size: 13px; color: #1a6b3c; text-decoration: none; }
+  .toc-list a:hover { text-decoration: underline; }
+
+  .section { background: #fff; margin: 20px 0; padding: 32px 80px; border-top: 3px solid #1a3a2a; }
+  .section-header { margin-bottom: 20px; }
+  .section-header .num { font-size: 11px; color: #888; letter-spacing: .1em; font-weight: 600; margin-bottom: 4px; }
+  .section-header h2 { font-size: 20px; font-weight: 700; color: #1a3a2a; }
+  .section-header p { font-size: 13px; color: #666; margin-top: 6px; line-height: 1.6; }
+
+  .overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .overview-card { background: #f7faf8; border: 1px solid #c8e6d4; border-radius: 6px; padding: 14px 18px; }
+  .overview-card .label { font-size: 11px; font-weight: 700; color: #1a6b3c; letter-spacing: .06em; margin-bottom: 6px; }
+  .overview-card p { font-size: 13px; color: #444; line-height: 1.65; }
+
+  .spec-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  .spec-table th { background: #1a3a2a; color: #fff; padding: 9px 14px; font-size: 12px; font-weight: 600; text-align: left; }
+  .spec-table td { padding: 9px 14px; font-size: 13px; border-bottom: 1px solid #eee; vertical-align: top; line-height: 1.6; }
+  .spec-table tr:nth-child(even) td { background: #f9f9f9; }
+  .spec-table td:first-child { font-weight: 600; color: #1a3a2a; white-space: nowrap; width: 150px; }
+  .spec-table td code { background: #eef6f1; color: #1a6b3c; padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: monospace; }
+
+  /* 어드민 목업 */
+  .mockup-wrap { background: #f5f5f5; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; margin: 20px 0; }
+  .mockup-topbar { background: #2d2d2d; color: #fff; padding: 8px 16px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .dot.r { background: #ff5f57; } .dot.y { background: #ffbd2e; } .dot.g { background: #28ca41; }
+  .url-bar { background: #444; border-radius: 3px; padding: 2px 10px; font-size: 11px; color: #aaa; margin-left: 8px; }
+
+  .admin-wrap { display: flex; background: #fff; }
+  .sidebar { width: 128px; background: #1f2937; flex-shrink: 0; }
+  .sidebar-logo { background: #111827; padding: 10px 12px; font-size: 10px; font-weight: 700; color: #fff; letter-spacing: .05em; }
+  .sidebar-menu { padding: 6px 0; }
+  .sidebar-item { padding: 7px 14px; font-size: 11px; color: #9ca3af; }
+  .sidebar-item.active { color: #fff; background: #374151; }
+  .sidebar-group { padding: 12px 14px 4px; font-size: 10px; color: #6b7280; font-weight: 600; letter-spacing: .06em; }
+  .sidebar-item.sub { padding-left: 20px; }
+  .sidebar-item.sub.active { background: #374151; color: #6ee7b7; }
+
+  .main-content { flex: 1; padding: 16px; overflow: hidden; }
+  .page-title { font-size: 14px; font-weight: 700; color: #111; margin-bottom: 12px; }
+
+  .filter-bar { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+  .filter-select { border: 1px solid #d1d5db; border-radius: 4px; padding: 4px 8px; font-size: 11px; background: #fff; color: #374151; }
+  .search-input { border: 1px solid #d1d5db; border-radius: 4px; padding: 4px 8px; font-size: 11px; width: 120px; }
+  .btn-search { background: #1a3a2a; color: #fff; border: none; border-radius: 4px; padding: 4px 12px; font-size: 11px; font-weight: 600; }
+
+  /* 테이블 공통 */
+  .tbl-wrap { overflow-x: auto; }
+  .data-table { border-collapse: collapse; font-size: 11px; white-space: nowrap; }
+  .data-table th { background: #f9fafb; border: 1px solid #e5e7eb; padding: 6px 8px; font-weight: 600; color: #374151; text-align: center; }
+  .data-table td { border: 1px solid #e5e7eb; padding: 5px 8px; color: #374151; text-align: center; }
+  .data-table td.left { text-align: left; }
+  .data-table td.right { text-align: right; }
+
+  /* ★ 합계 행 — colspan 없이 각 컬럼 그대로 */
+  .sum-row td { background: #d8eddf; color: #1a6b3c; font-weight: 700; border-color: #a8d4b8; }
+  .sum-row td.empty { background: #e8f5ee; }
+
+  .data-table tbody tr:not(.sum-row):hover td { background: #f9fafb; }
+
+  .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 11px; color: #666; }
+  .page-btns { display: flex; gap: 3px; }
+  .page-btn { border: 1px solid #d1d5db; border-radius: 3px; padding: 2px 7px; background: #fff; font-size: 11px; }
+  .page-btn.active { background: #1a3a2a; color: #fff; border-color: #1a3a2a; }
+
+  .page-tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #1a3a2a; }
+  .page-tab { padding: 8px 18px; font-size: 12px; font-weight: 600; cursor: pointer; color: #888; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+  .page-tab.active { color: #1a3a2a; border-bottom-color: #1a3a2a; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .spec-block { background: #f7faf8; border-left: 3px solid #1a6b3c; padding: 12px 16px; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .spec-block .spec-title { font-size: 12px; font-weight: 700; color: #1a3a2a; margin-bottom: 8px; }
+  .spec-block ul { padding-left: 16px; }
+  .spec-block li { font-size: 12px; color: #444; line-height: 1.8; }
+
+  .legend { display: flex; gap: 20px; margin: 10px 0; font-size: 12px; align-items: center; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-box { width: 14px; height: 11px; border-radius: 2px; }
+  .legend-box.sum { background: #d8eddf; border: 1px solid #a8d4b8; }
+  .legend-box.empty { background: #e8f5ee; border: 1px solid #a8d4b8; }
+  .legend-box.data { background: #fff; border: 1px solid #e5e7eb; }
+
+  .note { font-size: 11px; color: #888; margin-top: 6px; font-style: italic; }
+  .note::before { content: '* '; }
+
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .compare-box { border-radius: 6px; overflow: hidden; }
+  .compare-label { padding: 7px 12px; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+  .compare-label.before { background: #fee2e2; color: #991b1b; }
+  .compare-label.after { background: #d8eddf; color: #1a3a2a; }
+  .compare-inner { border: 1px solid #e5e7eb; border-top: none; overflow-x: auto; }
+  .compare-inner table { border-collapse: collapse; font-size: 10px; white-space: nowrap; }
+  .compare-inner th { background: #f9fafb; border: 1px solid #e5e7eb; padding: 5px 6px; font-weight: 600; color: #374151; text-align: center; }
+  .compare-inner td { border: 1px solid #e5e7eb; padding: 4px 6px; color: #374151; text-align: center; }
+  .compare-inner .sum-row td { background: #d8eddf; color: #1a6b3c; font-weight: 700; border-color: #a8d4b8; }
+  .compare-inner .sum-row td.empty { background: #e8f5ee; }
+  .compare-inner .sum-row td.left { text-align: left; }
+
+  .infobox { background: #f0f8f3; border-left: 3px solid #1a6b3c; padding: 12px 16px; margin: 12px 0; font-size: 13px; color: #2c5f3a; line-height: 1.7; border-radius: 0 4px 4px 0; }
+
+  .priority-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }
+  .priority-card { border-radius: 6px; padding: 14px; border: 1px solid #e5e7eb; }
+  .p-badge { font-size: 11px; font-weight: 700; display: inline-block; padding: 2px 8px; border-radius: 20px; margin-bottom: 8px; }
+  .p1 { background: #f0fdf4; border-color: #a8d4b8; }
+  .p1 .p-badge { background: #1a6b3c; color: #fff; }
+  .p2, .p3 { background: #fafafa; }
+  .p2 .p-badge { background: #374151; color: #fff; }
+  .p3 .p-badge { background: #6b7280; color: #fff; }
+  .priority-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .priority-card p { font-size: 12px; color: #666; line-height: 1.5; }
+
+  code.block { display: block; background: #1e2a22; color: #7ccc99; padding: 12px 16px; border-radius: 4px; font-size: 11px; font-family: 'Menlo', monospace; line-height: 1.7; margin: 8px 0; white-space: pre; overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="badge">VAUNCE APP ADMIN · 기능 기획서 v1.0</div>
+  <h1>조회 결과 합계 행 표시</h1>
+  <div class="sub">운영 메뉴 5개 페이지 — 테이블 내 합계 행 추가</div>
+  <div class="meta">
+    <span>작성일: 2026. 04. 02</span>
+    <span>대상: 개발사 전달용</span>
+  </div>
+</div>
+
+<div class="toc">
+  <h2>CONTENTS</h2>
+  <div class="toc-list">
+    <a href="#overview">1. 기획 배경 및 목적</a>
+    <a href="#principle">2. 공통 설계 원칙</a>
+    <a href="#before-after">3. 변경 전·후 비교</a>
+    <a href="#pages">4. 페이지별 목업 & 스펙</a>
+    <a href="#api">5. API 요청사항</a>
+    <a href="#priority">6. 우선순위</a>
+  </div>
+</div>
+
+<!-- 1. 배경 -->
+<div class="section" id="overview">
+  <div class="section-header">
+    <div class="num">01 · OVERVIEW</div>
+    <h2>기획 배경 및 목적</h2>
+  </div>
+  <div class="overview-grid">
+    <div class="overview-card">
+      <div class="label">BACKGROUND</div>
+      <p>현재 운영 메뉴에서 필터 조회 후 전체 합계(금액·건수·횟수 등)를 확인하려면 엑셀 다운로드 후 별도 집계가 필요합니다. 운영 담당자의 업무 효율이 저하되고 있습니다.</p>
+    </div>
+    <div class="overview-card">
+      <div class="label">GOAL</div>
+      <p>필터 조회 결과에 대한 전체 합계를 테이블 내 고정 합계 행으로 즉시 표시합니다. 엑셀 없이 한 화면에서 의사결정이 가능하도록 개선합니다.</p>
+    </div>
+  </div>
+  <table class="spec-table">
+    <tr><td>적용 범위</td><td>운영 &gt; 결제 내역 / 다회권 내역 / 정기권 내역 / 일회권 내역 / 포인트 관리 (총 5개 페이지)</td></tr>
+    <tr><td>UI 변경 범위</td><td>기존 테이블 컬럼 구조 변경 없음. 컬럼 헤더 바로 아래 합계 행(tr) 1개 추가만 해당</td></tr>
+    <tr><td>합계 기준</td><td>페이지(20건) 기준이 아닌 <strong>필터 조회 전체 결과 기준</strong>으로 합산</td></tr>
+  </table>
+</div>
+
+<!-- 2. 원칙 -->
+<div class="section" id="principle">
+  <div class="section-header">
+    <div class="num">02 · DESIGN PRINCIPLES</div>
+    <h2>공통 설계 원칙</h2>
+  </div>
+  <table class="spec-table">
+    <tr><th style="width:150px">항목</th><th>내용</th></tr>
+    <tr><td>위치</td><td>테이블 컬럼 헤더(th) 바로 아래 첫 번째 행에 고정</td></tr>
+    <tr><td>컬럼 구조</td><td>기존 컬럼 그대로 유지. <code>colspan</code> 사용 안 함. 각 컬럼 위치에 맞게 값 표시</td></tr>
+    <tr><td>갱신 시점</td><td>검색 버튼 클릭 시 리스트 API와 합계 집계 API를 <strong>병렬 호출</strong></td></tr>
+    <tr><td>로딩 처리</td><td>집계 완료 전 합계 행 셀에 <code>집계 중…</code> 표시</td></tr>
+    <tr><td>배경색 (합계값 셀)</td><td><code>#D8EDDF</code> (연두) + 텍스트 <code>#1A6B3C</code> + bold</td></tr>
+    <tr><td>배경색 (빈 셀)</td><td><code>#E8F5EE</code> (더 연한 연두) — 합계 행임을 시각적으로 연결</td></tr>
+    <tr><td>첫 번째 셀</td><td>"합계" 텍스트 고정 표시 (좌측 정렬)</td></tr>
+    <tr><td>비합산 컬럼</td><td>상태·날짜·이름·번호 등 합계가 의미 없는 컬럼은 빈 셀. "-" 등 텍스트 불필요</td></tr>
+  </table>
+  <div class="legend" style="margin-top:16px">
+    <span style="font-size:12px;font-weight:600;color:#444">범례:</span>
+    <div class="legend-item"><div class="legend-box sum"></div><span>합계값 있는 셀</span></div>
+    <div class="legend-item"><div class="legend-box empty"></div><span>빈 셀 (비집계 컬럼)</span></div>
+    <div class="legend-item"><div class="legend-box data"></div><span>일반 데이터 행 (기존)</span></div>
+  </div>
+</div>
+
+<!-- 3. Before / After -->
+<div class="section" id="before-after">
+  <div class="section-header">
+    <div class="num">03 · BEFORE / AFTER</div>
+    <h2>변경 전·후 비교 (다회권 내역 기준)</h2>
+    <p>기존 컬럼 구조를 그대로 유지하고, 헤더 바로 아래 합계 행 1줄만 추가됩니다.</p>
+  </div>
+  <div class="compare-grid">
+    <div class="compare-box">
+      <div class="compare-label before">BEFORE — 현재</div>
+      <div class="compare-inner">
+        <table>
+          <thead><tr><th>순번</th><th>티켓번호</th><th>센터명</th><th>수량</th><th>금액</th><th>상태</th><th>사용가능</th><th>사용</th><th>잔여</th><th>환불금액</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>17431142</td><td>인스파이어센터</td><td>1</td><td>140,000원</td><td>사용 가능</td><td>6회</td><td>0회</td><td>6회</td><td>-</td></tr>
+            <tr><td>2</td><td>17431141</td><td>동대구신세계</td><td>1</td><td>130,000원</td><td>사용 가능</td><td>6회</td><td>0회</td><td>6회</td><td>-</td></tr>
+            <tr><td>3</td><td>17431140</td><td>동대구신세계</td><td>1</td><td>115,000원</td><td>사용 가능</td><td>6회</td><td>0회</td><td>6회</td><td>-</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="compare-box">
+      <div class="compare-label after">AFTER — 개선안</div>
+      <div class="compare-inner">
+        <table>
+          <thead><tr><th>순번</th><th>티켓번호</th><th>센터명</th><th>수량</th><th>금액</th><th>상태</th><th>사용가능</th><th>사용</th><th>잔여</th><th>환불금액</th></tr></thead>
+          <tbody>
+            <tr class="sum-row">
+              <td class="left">합계</td><td class="empty"></td><td class="empty"></td>
+              <td>45,446</td><td>5,912,380,000원</td><td class="empty"></td>
+              <td>272,676회</td><td>91,204회</td><td>181,472회</td><td>13,000,000원</td>
+            </tr>
+            <tr><td>1</td><td>17431142</td><td>인스파이어센터</td><td>1</td><td>140,000원</td><td>사용 가능</td><td>6회</td><td>0회</td><td>6회</td><td>-</td></tr>
+            <tr><td>2</td><td>17431141</td><td>동대구신세계</td><td>1</td><td>130,000원</td><td>사용 가능</td><td>6회</td><td>0회</td><td>6회</td><td>-</td></tr>
+            <tr><td>3</td><td>17431140</td><td>동대구신세계</td><td>1</td><td>115,000원</td><td>사용 가능</td><td>6회</td><td>0회</td><td>6회</td><td>-</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. 페이지별 목업 -->
+<div class="section" id="pages">
+  <div class="section-header">
+    <div class="num">04 · PAGE MOCKUPS</div>
+    <h2>페이지별 목업 & 스펙</h2>
+  </div>
+  <div class="page-tabs">
+    <div class="page-tab active" onclick="showTab('payment',this)">결제 내역</div>
+    <div class="page-tab" onclick="showTab('multi',this)">다회권 내역</div>
+    <div class="page-tab" onclick="showTab('period',this)">정기권 내역</div>
+    <div class="page-tab" onclick="showTab('single',this)">일회권 내역</div>
+    <div class="page-tab" onclick="showTab('point',this)">포인트 관리</div>
+  </div>
+
+  <!-- 결제 내역 -->
+  <div class="tab-content active" id="tab-payment">
+    <div class="mockup-wrap">
+      <div class="mockup-topbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="url-bar">운영 &gt; 결제 내역</span></div>
+      <div class="admin-wrap">
+        <div class="sidebar">
+          <div class="sidebar-logo">VAUNCE APP ADMIN</div>
+          <div class="sidebar-menu">
+            <div class="sidebar-group">운영</div>
+            <div class="sidebar-item sub">회원 관리</div>
+            <div class="sidebar-item sub active">결제 내역</div>
+            <div class="sidebar-item sub">다회권 내역</div>
+            <div class="sidebar-item sub">정기권 내역</div>
+            <div class="sidebar-item sub">일회권 내역</div>
+            <div class="sidebar-item sub">포인트 관리</div>
+          </div>
+        </div>
+        <div class="main-content">
+          <div class="page-title">결제 내역</div>
+          <div class="filter-bar">
+            <select class="filter-select"><option>날짜 타입 전체</option></select>
+            <select class="filter-select"><option>📅 날짜 선택</option></select>
+            <select class="filter-select"><option>카드사 전체</option></select>
+            <select class="filter-select"><option>상태</option></select>
+            <input class="search-input" placeholder="Search">
+            <button class="btn-search">검색</button>
+          </div>
+          <div class="tbl-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>순번</th><th>결제번호</th><th>결제일시</th><th>카드사</th><th>카드번호</th><th>승인번호</th><th>업부</th><th>주문번호</th><th>구매자</th><th>핸드폰번호</th><th>결제상태</th><th>금액</th><th>환불일시</th><th>환불금액</th><th>버튼</th>
+            </tr></thead>
+            <tbody>
+              <tr class="sum-row">
+                <td class="left">합계</td>
+                <td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td>
+                <td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td>
+                <td class="empty"></td>
+                <td class="right">1,284,230,000원</td>
+                <td>1,240건</td>
+                <td class="right">22,000,000원</td>
+                <td class="empty"></td>
+              </tr>
+              <tr><td>1</td><td>CARD260402-191-000011</td><td>2026-04-02 16:14:40</td><td>롯데</td><td>████-████</td><td>26293849</td><td>입시봉</td><td>APP-O260402-191-000011</td><td></td><td>010-████-████</td><td>결제 완료</td><td class="right">5,000원</td><td>-</td><td>-</td><td>👁 👤</td></tr>
+              <tr><td>2</td><td>CARD260402-191-000010</td><td>2026-04-02 14:24:09</td><td>비씨</td><td>████-████</td><td>39576742</td><td>입시봉</td><td>APP-O260402-191-000010</td><td></td><td>010-████-████</td><td>결제 완료</td><td class="right">15,800원</td><td>-</td><td>-</td><td>👁 👤</td></tr>
+              <tr><td>3</td><td>CARD260402-191-000009</td><td>2026-04-02 13:48:15</td><td>신한</td><td>████-████</td><td>24860993</td><td>입시봉</td><td>APP-O260402-191-000009</td><td></td><td>010-████-████</td><td>결제 완료</td><td class="right">54,000원</td><td>-</td><td>-</td><td>👁 👤</td></tr>
+              <tr><td style="text-align:center;color:#aaa;padding:8px;font-size:10px" colspan="15">… 이하 530,318건 (페이지당 20개 표시)</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <div class="pagination">
+            <span>검색 결과 : 530,321 개</span>
+            <div class="page-btns"><div class="page-btn">«</div><div class="page-btn active">1</div><div class="page-btn">2</div><div class="page-btn">3</div><div class="page-btn">»</div></div>
+            <span>페이지 당 20 개</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec-block">
+      <div class="spec-title">결제 내역 — 합계 행 집계 항목 정의</div>
+      <ul>
+        <li><strong>금액</strong> 컬럼: 금액 합산</li>
+        <li><strong>환불일시</strong> 컬럼: 환불일시가 존재하는 행의 건수 (예: 1,240건)</li>
+        <li><strong>환불금액</strong> 컬럼: 환불금액 합산</li>
+        <li>나머지 컬럼(결제번호·결제일시·카드사·카드번호·승인번호·업부·주문번호·구매자·핸드폰번호·결제상태·버튼): 빈 셀</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 다회권 -->
+  <div class="tab-content" id="tab-multi">
+    <div class="mockup-wrap">
+      <div class="mockup-topbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="url-bar">운영 &gt; 다회권 내역</span></div>
+      <div class="admin-wrap">
+        <div class="sidebar">
+          <div class="sidebar-logo">VAUNCE APP ADMIN</div>
+          <div class="sidebar-menu">
+            <div class="sidebar-group">운영</div>
+            <div class="sidebar-item sub">회원 관리</div>
+            <div class="sidebar-item sub">결제 내역</div>
+            <div class="sidebar-item sub active">다회권 내역</div>
+            <div class="sidebar-item sub">정기권 내역</div>
+            <div class="sidebar-item sub">일회권 내역</div>
+            <div class="sidebar-item sub">포인트 관리</div>
+          </div>
+        </div>
+        <div class="main-content">
+          <div class="page-title">다회권 내역</div>
+          <div class="filter-bar">
+            <select class="filter-select"><option>발급일</option></select>
+            <select class="filter-select"><option>📅 날짜 선택</option></select>
+            <select class="filter-select"><option>매장 선택</option></select>
+            <select class="filter-select"><option>품목</option></select>
+            <select class="filter-select"><option>티켓 상태</option></select>
+            <select class="filter-select"><option>유효 여부</option></select>
+            <select class="filter-select"><option>탈퇴 여부</option></select>
+            <input class="search-input" placeholder="Search">
+            <button class="btn-search">검색</button>
+          </div>
+          <div class="tbl-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>순번</th><th>티켓번호</th><th>구매일시</th><th>센터명</th><th>품목</th><th>수량</th><th>금액</th><th>구매자명</th><th>유대폰번호</th><th>유효기간</th><th>티켓상태</th><th>사용가능</th><th>사용</th><th>잔여</th><th>유효여부</th><th>환불일</th><th>환불금액</th><th>탈퇴여부</th><th>회원정보</th>
+            </tr></thead>
+            <tbody>
+              <tr class="sum-row">
+                <td class="left">합계</td>
+                <td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td>
+                <td>45,446</td>
+                <td class="right">5,912,380,000원</td>
+                <td class="empty"></td><td class="empty"></td><td class="empty"></td>
+                <td class="empty"></td>
+                <td>272,676회</td><td>91,204회</td><td>181,472회</td>
+                <td class="empty"></td><td class="empty"></td>
+                <td class="right">13,000,000원</td>
+                <td class="empty"></td><td class="empty"></td>
+              </tr>
+              <tr><td>1</td><td>17431142</td><td>2026-04-02 15:48:39</td><td>인스파이어아이조트센터</td><td>인스파이어/다회권(5+1회)/공동</td><td>1</td><td class="right">140,000원</td><td></td><td>010-████-████</td><td>2026-09-29 23:59:59</td><td>사용 가능</td><td>6회</td><td>0회</td><td>6회</td><td>Y</td><td>-</td><td>0</td><td>N</td><td>👤</td></tr>
+              <tr><td>2</td><td>17431141</td><td>2026-04-02 05:54:59</td><td>동대구신세계백화점센터</td><td>대구/다회권(5+1회)/110cm이상</td><td>1</td><td class="right">130,000원</td><td></td><td>010-████-████</td><td>2026-09-29 23:59:59</td><td>사용 가능</td><td>6회</td><td>0회</td><td>6회</td><td>Y</td><td>-</td><td>0</td><td>N</td><td>👤</td></tr>
+              <tr><td style="text-align:center;color:#aaa;padding:8px;font-size:10px" colspan="19">… 이하 45,444건</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <div class="pagination">
+            <span>검색 결과 : 45,446 개</span>
+            <div class="page-btns"><div class="page-btn">«</div><div class="page-btn active">1</div><div class="page-btn">2</div><div class="page-btn">3</div><div class="page-btn">»</div></div>
+            <span>페이지 당 20 개</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec-block">
+      <div class="spec-title">다회권 내역 — 합계 행 집계 항목 정의</div>
+      <ul>
+        <li><strong>수량</strong>: 수량 합산</li>
+        <li><strong>금액</strong>: 금액 합산</li>
+        <li><strong>사용가능</strong>: 사용가능 컬럼 합산 (발급된 전체 이용 횟수)</li>
+        <li><strong>사용</strong>: 사용 컬럼 합산</li>
+        <li><strong>잔여</strong>: 잔여 컬럼 합산 (= 사용가능 − 사용)</li>
+        <li><strong>환불금액</strong>: 환불금액 합산. 환불된 티켓은 사용가능·사용·잔여 횟수 합산에서 제외</li>
+        <li>나머지 컬럼(티켓번호·구매일시·센터명·품목·구매자명·유대폰번호·유효기간·티켓상태·유효여부·환불일·탈퇴여부·회원정보): 빈 셀</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 정기권 -->
+  <div class="tab-content" id="tab-period">
+    <div class="mockup-wrap">
+      <div class="mockup-topbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="url-bar">운영 &gt; 정기권 내역</span></div>
+      <div class="admin-wrap">
+        <div class="sidebar">
+          <div class="sidebar-logo">VAUNCE APP ADMIN</div>
+          <div class="sidebar-menu">
+            <div class="sidebar-group">운영</div>
+            <div class="sidebar-item sub">회원 관리</div>
+            <div class="sidebar-item sub">결제 내역</div>
+            <div class="sidebar-item sub">다회권 내역</div>
+            <div class="sidebar-item sub active">정기권 내역</div>
+            <div class="sidebar-item sub">일회권 내역</div>
+            <div class="sidebar-item sub">포인트 관리</div>
+          </div>
+        </div>
+        <div class="main-content">
+          <div class="page-title">정기권 내역</div>
+          <div class="filter-bar">
+            <select class="filter-select"><option>발급일</option></select>
+            <select class="filter-select"><option>📅 날짜 선택</option></select>
+            <select class="filter-select"><option>매장 선택</option></select>
+            <select class="filter-select"><option>품목</option></select>
+            <select class="filter-select"><option>티켓 상태</option></select>
+            <input class="search-input" placeholder="Search">
+            <button class="btn-search">검색</button>
+          </div>
+          <div class="tbl-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>순번</th><th>티켓번호</th><th>구매일시</th><th>센터명</th><th>품목</th><th>수량</th><th>금액</th><th>구매자명</th><th>유대폰번호</th><th>유효기간</th><th>티켓상태</th><th>사용횟수</th><th>유효여부</th><th>환불일</th><th>환불금액</th><th>탈퇴여부</th><th>회원정보</th>
+            </tr></thead>
+            <tbody>
+              <tr class="sum-row">
+                <td class="left">합계</td>
+                <td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td>
+                <td>2,340</td>
+                <td class="right">441,660,000원</td>
+                <td class="empty"></td><td class="empty"></td><td class="empty"></td>
+                <td class="empty"></td>
+                <td>1,108회</td>
+                <td class="empty"></td><td class="empty"></td>
+                <td class="right">3,200,000원</td>
+                <td class="empty"></td><td class="empty"></td>
+              </tr>
+              <tr><td>1</td><td>17426406</td><td>2026-04-01 16:59:13</td><td>부산상호W센터</td><td>부산/정기권/100cm이상</td><td>1</td><td class="right">189,000원</td><td></td><td>010-████-████</td><td>2026-06-30 23:59:59</td><td>사용 불가</td><td>0</td><td>N</td><td>-</td><td>-</td><td>N</td><td>👤</td></tr>
+              <tr><td>2</td><td>17426405</td><td>2026-04-01 14:30:05</td><td>타임플러스 수원센터</td><td>수원/정기권/100cm이상</td><td>1</td><td class="right">186,000원</td><td></td><td>010-████-████</td><td>2026-06-30 23:59:59</td><td>사용 완료</td><td>2</td><td>Y</td><td>-</td><td>-</td><td>N</td><td>👤</td></tr>
+              <tr><td style="text-align:center;color:#aaa;padding:8px;font-size:10px" colspan="17">… 이하 2,338건</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <div class="pagination">
+            <span>검색 결과 : 2,340 개</span>
+            <div class="page-btns"><div class="page-btn active">1</div><div class="page-btn">2</div><div class="page-btn">3</div></div>
+            <span>페이지 당 20 개</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec-block">
+      <div class="spec-title">정기권 내역 — 합계 행 집계 항목 정의</div>
+      <ul>
+        <li><strong>수량</strong>: 수량 합산</li>
+        <li><strong>금액</strong>: 금액 합산</li>
+        <li><strong>사용횟수</strong>: 사용횟수 합산</li>
+        <li><strong>환불금액</strong>: 환불금액 합산</li>
+        <li>나머지 컬럼(유효여부·환불일·티켓상태 등): 빈 셀</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 일회권 -->
+  <div class="tab-content" id="tab-single">
+    <div class="mockup-wrap">
+      <div class="mockup-topbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="url-bar">운영 &gt; 일회권 내역</span></div>
+      <div class="admin-wrap">
+        <div class="sidebar">
+          <div class="sidebar-logo">VAUNCE APP ADMIN</div>
+          <div class="sidebar-menu">
+            <div class="sidebar-group">운영</div>
+            <div class="sidebar-item sub">회원 관리</div>
+            <div class="sidebar-item sub">결제 내역</div>
+            <div class="sidebar-item sub">다회권 내역</div>
+            <div class="sidebar-item sub">정기권 내역</div>
+            <div class="sidebar-item sub active">일회권 내역</div>
+            <div class="sidebar-item sub">포인트 관리</div>
+          </div>
+        </div>
+        <div class="main-content">
+          <div class="page-title">일회권 내역</div>
+          <div class="filter-bar">
+            <select class="filter-select"><option>발급일</option></select>
+            <select class="filter-select"><option>📅 날짜 선택</option></select>
+            <select class="filter-select"><option>매장 선택</option></select>
+            <select class="filter-select"><option>품목</option></select>
+            <select class="filter-select"><option>티켓 상태</option></select>
+            <input class="search-input" placeholder="Search">
+            <button class="btn-search">검색</button>
+          </div>
+          <div class="tbl-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>순번</th><th>티켓번호</th><th>구매일시</th><th>사용일시</th><th>센터명</th><th>품목</th><th>수량</th><th>금액</th><th>구매자명</th><th>유대폰번호</th><th>유효기간</th><th>티켓상태</th><th>사용가능(회)</th><th>사용(회)</th><th>잔여(회)</th><th>유효여부</th><th>환불일</th><th>회원정보</th>
+            </tr></thead>
+            <tbody>
+              <tr class="sum-row">
+                <td class="left">합계</td>
+                <td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td>
+                <td>908,609</td>
+                <td class="right">7,267,720,000원</td>
+                <td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td>
+                <td>908,609회</td><td>752,340회</td><td>156,269회</td>
+                <td class="empty"></td><td class="empty"></td><td class="empty"></td>
+              </tr>
+              <tr><td>1</td><td>18124243</td><td>2026-04-02 16:19:42</td><td>-</td><td>롯데프리미엄아울렛 의왕센터</td><td>의왕/보호자입장권</td><td>1</td><td class="right">6,000원</td><td></td><td>010-████-████</td><td>2026-05-02 23:59:59</td><td>사용 가능</td><td>1</td><td>0</td><td>1</td><td>Y</td><td>-</td><td>👤</td></tr>
+              <tr><td>2</td><td>18124242</td><td>2026-04-02 16:17:11</td><td>2026-04-02 16:17:36</td><td>세종센터</td><td>세종/보호자입장권</td><td>1</td><td class="right">8,000원</td><td></td><td>010-████-████</td><td>2026-05-02 23:59:59</td><td>사용 완료</td><td>1</td><td>1</td><td>0</td><td>N</td><td>-</td><td>👤</td></tr>
+              <tr><td style="text-align:center;color:#aaa;padding:8px;font-size:10px" colspan="18">… 이하 908,607건</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <div class="pagination">
+            <span>검색 결과 : 908,609 개</span>
+            <div class="page-btns"><div class="page-btn active">1</div><div class="page-btn">2</div><div class="page-btn">3</div></div>
+            <span>페이지 당 20 개</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec-block">
+      <div class="spec-title">일회권 내역 — 합계 행 집계 항목 정의</div>
+      <ul>
+        <li><strong>수량</strong>: 수량 합산</li>
+        <li><strong>금액</strong>: 금액 합산</li>
+        <li><strong>사용가능(회)</strong>: 합산 (1장 = 1회이므로 수량 합계와 동일)</li>
+        <li><strong>사용(회)</strong>: 사용(회) 합산</li>
+        <li><strong>잔여(회)</strong>: 잔여(회) 합산. 환불 티켓은 합산 제외</li>
+        <li>나머지 컬럼: 빈 셀</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 포인트 -->
+  <div class="tab-content" id="tab-point">
+    <div class="mockup-wrap">
+      <div class="mockup-topbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="url-bar">운영 &gt; 포인트 관리</span></div>
+      <div class="admin-wrap">
+        <div class="sidebar">
+          <div class="sidebar-logo">VAUNCE APP ADMIN</div>
+          <div class="sidebar-menu">
+            <div class="sidebar-group">운영</div>
+            <div class="sidebar-item sub">회원 관리</div>
+            <div class="sidebar-item sub">결제 내역</div>
+            <div class="sidebar-item sub">다회권 내역</div>
+            <div class="sidebar-item sub">정기권 내역</div>
+            <div class="sidebar-item sub">일회권 내역</div>
+            <div class="sidebar-item sub active">포인트 관리</div>
+          </div>
+        </div>
+        <div class="main-content">
+          <div class="page-title">포인트 관리</div>
+          <div class="filter-bar">
+            <select class="filter-select"><option>날짜 타입</option></select>
+            <select class="filter-select"><option>📅 날짜 선택</option></select>
+            <select class="filter-select"><option>구분</option></select>
+            <select class="filter-select"><option>상태</option></select>
+            <input class="search-input" placeholder="Search">
+            <button class="btn-search">검색</button>
+          </div>
+          <div class="tbl-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>적립일시</th><th>회원번호</th><th>회원이름</th><th>유대번호</th><th>유효기간</th><th>구분</th><th>상태</th><th>적립포인트</th><th>사용포인트</th><th>소멸포인트</th><th>잔여포인트</th><th>회원정보</th>
+            </tr></thead>
+            <tbody>
+              <tr class="sum-row">
+                <td class="left">합계</td>
+                <td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td>
+                <td class="empty"></td><td class="empty"></td>
+                <td class="right">24,830,500P</td>
+                <td class="right">18,204,750P</td>
+                <td class="right">1,240,000P</td>
+                <td class="right">5,385,750P</td>
+                <td class="empty"></td>
+              </tr>
+              <tr><td>2022-02-21 15:38:18</td><td>107</td><td>-</td><td>010-████-████</td><td>2023-02-21 15:38:18</td><td>적립</td><td>만료</td><td class="right">225P</td><td>0P</td><td>0P</td><td class="right">225P</td><td>👤</td></tr>
+              <tr><td>2022-03-03 11:50:25</td><td>104</td><td>-</td><td>010-████-████</td><td>2023-03-03 11:50:25</td><td>적립</td><td>만료</td><td class="right">80P</td><td>0P</td><td>0P</td><td class="right">80P</td><td>👤</td></tr>
+              <tr><td style="text-align:center;color:#aaa;padding:8px;font-size:10px" colspan="12">… 이하 1,071,459건</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <div class="pagination">
+            <span>검색 결과 : 1,071,461 개</span>
+            <div class="page-btns"><div class="page-btn active">1</div><div class="page-btn">2</div><div class="page-btn">3</div></div>
+            <span>페이지 당 20 개</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spec-block">
+      <div class="spec-title">포인트 관리 — 합계 행 집계 항목 정의</div>
+      <ul>
+        <li><strong>적립포인트</strong>: 적립포인트 합산</li>
+        <li><strong>사용포인트</strong>: 사용포인트 합산</li>
+        <li><strong>소멸포인트</strong>: 소멸포인트 합산</li>
+        <li><strong>잔여포인트</strong>: 잔여포인트 합산 (= 적립 − 사용 − 소멸)</li>
+        <li>나머지 컬럼(적립일시·회원번호·회원이름·유대번호·유효기간·구분·상태·회원정보): 빈 셀</li>
+        <li>구분(적립/사용/소멸) 필터 선택 시 해당 항목만 집계</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 5. API -->
+<div class="section" id="api">
+  <div class="section-header">
+    <div class="num">05 · API REQUIREMENTS</div>
+    <h2>API 요청사항</h2>
+  </div>
+  <table class="spec-table" style="margin-bottom:16px">
+    <tr><th style="width:150px">항목</th><th>내용</th></tr>
+    <tr><td>방식</td><td>기존 리스트 API 응답에 <code>summary</code> 객체 추가 또는 집계 전용 API 별도 추가 (개발사 판단)</td></tr>
+    <tr><td>파라미터</td><td>리스트 API와 동일한 필터 파라미터 공유</td></tr>
+    <tr><td>호출 방식</td><td>검색 버튼 클릭 시 리스트 API와 <strong>병렬 호출</strong> — 리스트 즉시 표시, 합계는 완료 후 갱신</td></tr>
+    <tr><td>성능 고려</td><td>건수 많은 페이지(일회권 ~90만건, 포인트 ~107만건)는 집계 쿼리 별도 최적화 권장</td></tr>
+  </table>
+  <code class="block">// 다회권 내역 summary 응답 예시
+{
+  "summary": {
+    "totalCount": 45446,
+    "totalQuantity": 45446,
+    "totalAmount": 5912380000,
+    "totalRefundAmount": 13000000,
+    "totalUsableCount": 272676,
+    "totalUsedCount": 91204,
+    "totalRemainingCount": 181472
+  }
+}</code>
+  <code class="block">// 포인트 관리 summary 응답 예시
+{
+  "summary": {
+    "totalCount": 1071461,
+    "totalEarnedPoints": 24830500,
+    "totalUsedPoints": 18204750,
+    "totalExpiredPoints": 1240000,
+    "totalRemainingPoints": 5385750
+  }
+}</code>
+</div>
+
+<!-- 6. 우선순위 -->
+<div class="section" id="priority">
+  <div class="section-header">
+    <div class="num">06 · PRIORITY</div>
+    <h2>우선순위 제안</h2>
+  </div>
+  <div class="priority-grid">
+    <div class="priority-card p1">
+      <div class="p-badge">P1</div>
+      <h4>결제 내역 / 다회권 내역</h4>
+      <p>조회 빈도 가장 높고, 금액 집계 필요성이 즉각적.</p>
+    </div>
+    <div class="priority-card p2">
+      <div class="p-badge">P2</div>
+      <h4>일회권 내역 / 정기권 내역</h4>
+      <p>다회권과 구조 유사 — 컴포넌트 재사용 가능.</p>
+    </div>
+    <div class="priority-card p3">
+      <div class="p-badge">P3</div>
+      <h4>포인트 관리</h4>
+      <p>컬럼 구조 상이 — 별도 집계 로직 구현 필요.</p>
+    </div>
+  </div>
+  <p class="note" style="margin-top:16px">본 문서의 수치는 기획용 예시 데이터이며, 실제 집계 값은 운영 DB 기준으로 산출됩니다.</p>
+</div>
+
+<script>
+function showTab(id, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>
